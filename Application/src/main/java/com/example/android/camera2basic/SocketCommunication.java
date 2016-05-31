@@ -33,10 +33,17 @@ public class SocketCommunication {
         }
     }
 
-    public void sendMessage(String messageTag) {
+    public boolean sendMessage(String messageTag, String data) {
         if(messageTag == "countImg") {
             ioSocket.emit(messageTag);
+            return true;
         }
+        else if (messageTag == "Image") {
+            ioSocket.emit(messageTag, data);
+            return true;
+        }
+        else
+            return false;
     }
 
     private Emitter.Listener onNewMessage = new Emitter.Listener() {

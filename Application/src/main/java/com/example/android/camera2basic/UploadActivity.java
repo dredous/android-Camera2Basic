@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.InputType;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -73,13 +74,13 @@ public class UploadActivity extends Activity{
         cntBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(communicationEstablished == false && serverUrl != "") {
+                if (communicationEstablished == false && serverUrl != "") {
                     socketIo = new SocketCommunication(serverUrl);
                     communicationEstablished = true;
                 } else {
                     return;
                 }
-                socketIo.sendMessage("countImg");
+                socketIo.sendMessage("countImg", "");
             }
         });
         uplBtn.setOnClickListener(new View.OnClickListener() {
@@ -115,6 +116,30 @@ public class UploadActivity extends Activity{
         });
     }
 
+    private void resultDialog(String tag, boolean result) {
+        alertBuilder = new AlertDialog.Builder(UploadActivity.this);
+        if(tag == "upload" && result == true) {
+            alertBuilder.setTitle("Success in Uploading Image to Server");
+            alertBuilder.setNegativeButton("Done", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
+            alertBuilder.show();
+        } else if(tag == "upload" && result == false) {
+            alertBuilder.setTitle("Failed to Upload Image to Server");
+            alertBuilder.setNegativeButton("Done", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
+            alertBuilder.show();
+        } else
+            return;
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -132,7 +157,12 @@ public class UploadActivity extends Activity{
                     if(picturePath != null) {
                         Bitmap bm = BitmapFactory.decodeFile(picturePath);
                         Bitmap resizedBm = Bitmap.createScaledBitmap(bm, 260, 360, false);
-                        //ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        resizedBm.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                        byte[] b = baos.toByteArray();
+                        String encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
+                        boolean result = socketIo.sendMessage("Image", encodedImage);
+                        resultDialog("upload", result);
                         imageView.setImageBitmap(resizedBm);
                     }
                 }
